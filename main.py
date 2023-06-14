@@ -36,15 +36,15 @@ def generate_noisy_linear_dependency(
     Generate random noisy linear dependency.
 
     Args:
-      beta0: shift of the scaled independent variable
-      beta1: scaler of the independent variable
-      sigma: (optional float) standard devaition of the residuals
-      n: (optional int) the count of randomly generated examples
-      seed_x: (optional int): random seed for the independent variable
-      seed_eps: (optional int): random seed for the residuals
+      beta0 (float): shift of the scaled independent variable;
+      beta1 (float): scaler of the independent variable;
+      sigma (float): standard devaition of the residuals;
+      n (optional int): the count of randomly generated examples;
+      seed_x (optional int): random seed for the independent variable;
+      seed_eps (optional int): random seed for the residuals;
 
     Returns:
-      Tuple of two 1D random tensors: independent and dependednt variables
+      Tuple of two 1D random tensors: independent and dependednt variables.
     '''
 
     # Step 1: generate random samples for independent variable and residual
@@ -61,25 +61,58 @@ def generate_noisy_linear_dependency(
 def predict(betas, x) :
     '''
     Predict independent variable examples from the dependent variable examples
-    and model parameters
+    and model parameters.
 
     Args:
-      betas: 1D list of model paramaters of size 2.
-      x: 1D tensor with examples of independednt variable
+      betas (list of 2 floats): 1D list of model paramaters of size 2;
+      x (1D tensor of floats): 1D tensor with examples of independent variable;
 
     Returns:
-      1D tensor with examples of predicted values of dependednt variable
+      1D tensor with examples of predicted values of dependednt variable.
     '''
     y = betas[1] * x + betas[0]
     return y
 
 
 def mean_squared_error(y_pred, y_true) :
+    '''
+    Computes Mean Squared Error, which can be used as a loss function for
+    linear regression.
+
+    Args:
+      y_pred (1D tensor of floats): 1D tensor of model-predicted examples of
+          dependent variable;
+      y_true (1D tensor of floats): 1D tensor of actually observed examples of
+          dependent variable;
+
+    Returns:
+      MSE float scalar.
+    '''
     mse = tf.reduce_mean(tf.square(y_pred - y_true))
     return mse
 
 
 def fit(x, y, betas_in_out, epochs, learning_rate, verbose=True) :
+    '''
+    Fit the model (aka estimate its parameters) using gradient descent in
+    multiple epochs. Note that the batch size is the entire trainign set.
+
+    Args:
+      x (1D tensor of floats): 1D tensor of examples of independent variable;
+      y (1D tensor of floats): 1D tensor of examples of independent variable;
+      betas_in_out (list of 2 floats): 1D list of model paramaters of size 2;
+          the contents of this list is updated in this "fit" function with
+          gradient descent, and the updated values are accessible after
+          function exits;
+      epochs (int): the number of epochs for the gradient descent.
+      learning_rate (float): learning rate for the gradient descent
+      verbose (optional boolean): print intermediate losses iff verbose is True
+
+    Returns:
+      Returns a list of tuples of size 3, which is the history of model
+      estimation/fitting with evolutions of all model paramaters (2) and loss
+      function values for each epoch.
+    '''
 
     history = []
 
@@ -115,7 +148,21 @@ def fit(x, y, betas_in_out, epochs, learning_rate, verbose=True) :
     return history
 
 
-def plot_gradient_descent_path(history, x, y):
+def plot_gradient_descent_path(history, x, y, save_to_pdf=False):
+    '''
+    Plot a surface in 3D for losses (on Z) relative to 2 model paramaters
+    (on X and Y), as well as the curve on this surface that traces the history
+    of loss evolution during model fitting with gradient descent.
+
+    Args:
+      history (list of tuples of size 3): 1D tensor of model-predicted examples of
+          dependent variable;
+      x (1D tensor of floats): 1D tensor of examples of independent variable;
+      y (1D tensor of floats): 1D tensor of examples of independent variable;
+
+    Returns:
+      None
+    '''
     beta0s = np.linspace(-1, 1)
     beta1s = np.linspace(-1, 1)
     beta0s_mesh, beta1s_mesh = np.meshgrid(beta0s, beta1s)
@@ -142,6 +189,9 @@ def plot_gradient_descent_path(history, x, y):
     ax.set_ylabel('beta1', fontsize = 17, labelpad=10)
     ax.set_zlabel('loss', fontsize = 17, labelpad=10)
     ax.view_init(elev = 20, azim=10)
+    if save_to_pdf:
+        plt.savefig(
+            "gradient_descent_3d.pdf", format="pdf", bbox_inches="tight")
 
 
 BETA0_TRUE = +0.40
@@ -156,6 +206,7 @@ BETA1_INIT = -0.55
 EPOCHS = 1001
 LEARNING_RATE = 0.04
 
+SAVE_TO_PDFS = True
 
 def main() :
 
@@ -192,8 +243,10 @@ def main() :
     ###########################################################################
     # Fit the model
     print("Started model fitting ...")
+    print("-" * 30)
     history = fit(x = x_train, y = y_train, betas_in_out = betas,
                 epochs=EPOCHS, learning_rate = LEARNING_RATE, verbose=True)
+    print("-" * 30)
     print("Finished model fitting.")
     print()
 
@@ -216,6 +269,10 @@ def main() :
           end = "")
     plt.plot(x_train, y_train, "b.")
     plt.plot(x_train, predict(betas = betas, x = x_train))
+    if SAVE_TO_PDFS :
+        plt.savefig(
+            "scatter_data_fitted_line_2d.pdf",
+            format="pdf", bbox_inches="tight")
     print("Done.")
     print()
 
@@ -223,7 +280,11 @@ def main() :
     # Plot gradient descent path
     print("Producing 3D plot of gradient descent path... ",
           end = "")
-    plot_gradient_descent_path(history=history, x=x_train, y=y_train)
+    plot_gradient_descent_path(
+        history = history,
+        x = x_train,
+        y = y_train,
+        save_to_pdf = SAVE_TO_PDFS)
     print("Done.")
     print()
 
